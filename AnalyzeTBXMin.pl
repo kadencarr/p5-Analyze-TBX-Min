@@ -73,67 +73,23 @@ my $counter2 = 0;
 my $old = 0;
 ################### New twig instance to check for </TBX> tag at the end of the program
 ################### Working.
-my $twig_instance0 = XML::Twig->new(
+
+#### !!!!!!! Instead of creating a new twig for each tag you search for, it is much faster and more efficient to do it all in one go.  This is especially the case with very large TBX files, !!!!!!!
+#### !!!!!!! so you don't have to read through each file every time you search for something. In my tests, this ran more than twice as fast after I made the change							!!!!!!!!
+my $twig_instance = XML::Twig->new(
 	twig_handlers => {
 		
 		TBX => sub {
 			$TBXcheck++;
 			
-		}
-	}
-);
-
-$twig_instance0->parsefile($path_to_TBX);  
-
-if($TBXcheck eq '0') { 
-	print "The file is not a tbxm file.\n" } else {
-	
-print "The file is a tbxm file. \n"; }
-
-################### Double-check for TBX-Min format, this time by looking at the dialect before the header. 
-################### Working.
-my $twig_instance01 = XML::Twig->new(
-    twig_handlers => {
-		
-		TBX => sub {
+			################### Double-check for TBX-Min format, this time by looking at the dialect before the header.
+			################### Working.
 			my ($twig,$elt) = @_;
 			$TBX2 = $elt->att("dialect");
-		}
-	}
-);
-
-$twig_instance01->parsefile($path_to_TBX);
-
-if($TBX2 eq "TBX-Min") { 
-	print "Confirmed\n" } else {
-	
-print "File not Confirmed\n"; } ;
-
-################### Check if file is in the Old TBX-Min format or in the Current format. Let the user know which kind of file they are working with.
-################### Working.
-
-my $twig_instance02 = XML::Twig->new(
-    twig_handlers => {
+		},
 		
-		termGroup => sub {
-			$old++;
-		}
-	}
-);
-
-$twig_instance02->parsefile($path_to_TBX);
-
-if($old > 0) { 
-	print "The file format is NOT up to date.\n" } else {
-	
-print "The file format is up to date.\n"; } ;
-
-################### New to twig instance to read the source language and target language from the tag found within the header.
-################### Working.
-
-my $twig_instance1 = XML::Twig->new(
-	twig_handlers => {
-		
+		################### New to twig instance to read the source language and target language from the tag found within the header.
+		################### Working.
 		languages => sub {
 			my ($twig,$elt) = @_;
 			$source = $elt->att("source");
@@ -141,18 +97,10 @@ my $twig_instance1 = XML::Twig->new(
 			print "Source Language: \"$source\"\n";
 			print "Target Language: \"$target\"\n";	
 			
-		}
-	}	
-);
-
-$twig_instance1->parsefile($path_to_TBX);  
-
-################### Check to make sure that each term has a value for its language group FOR CURRENT VERSIONS OF TBX MIN !!!!!!!!!!!!!
-################### Working.
-
-my $twig_instance99 = XML::Twig->new(
-    twig_handlers => {	 
-
+		},
+		
+		################### Check to make sure that each term has a value for its language group FOR CURRENT VERSIONS OF TBX MIN !!!!!!!!!!!!!
+		################### Working.
 		langSet => sub { #Current Standard
 			my ($twig,$elt) = @_;
 			$langcheck = $elt->att("xml:lang");
@@ -160,18 +108,10 @@ my $twig_instance99 = XML::Twig->new(
 			print "Warning! One or more terms does not contain a specified language!\n";
 			$counter++;
 			};
-		}
-	}
-);
-	
-$twig_instance99->parsefile($path_to_TBX);
-
-################### Check to make sure that each term has a value for its language group FOR OLD VERSIONS OF TBX MIN !!!!!!!!!!
-################### Working.
-
-my $twig_instance98 = XML::Twig->new(
-    twig_handlers => {	 
-
+		},
+		
+		################### Check to make sure that each term has a value for its language group FOR OLD VERSIONS OF TBX MIN !!!!!!!!!!
+		################### Working.
 		langGroup => sub { #Old Standard
 			my ($twig,$elt) = @_;
 			$langcheck = $elt->att("xml:lang");
@@ -179,45 +119,60 @@ my $twig_instance98 = XML::Twig->new(
 			print "Warning! One or more terms does not contain a specified language!\n";
 			$counter2++;
 			};
-		}
-	}
-);
-	
-$twig_instance98->parsefile($path_to_TBX);		
-
-################### New Twig instance to determine number of terms present by checking for </term> tags.
-################### Working.
-my $twig_instance2 = XML::Twig->new(
-	twig_handlers => {
+		},
 		
+		################### Check if file is in the Old TBX-Min format or in the Current format. Let the user know which kind of file they are working with.
+		################### Working.
+		termGroup => sub {
+			$old++;
+		},
+		
+		################### Determine number of terms present by checking for </term> tags.
+		################### Working.
 		term => sub {
 			$number_of_terms++;
 			print "Found $number_of_terms terms so far!\n";
 			
-		}
-	}
-);
-
-
-$twig_instance2->parsefile($path_to_TBX);  
-
-print "Total Number of Terms in File: $number_of_terms\n"; 
-
-################## Print out Subject fields used in document where <subjectField> tags occur.
-################## Working.
-
-my $twig_instance3 = XML::Twig->new(
-	twig_handlers => {
+		},
 		
+		################## Print out Subject fields used in document where <subjectField> tags occur.
+		################### Working.
 		subjectField => sub {
-			my ($path_to_TBX, $elt) = @_;
+			my ($twig, $elt) = @_;   ### !!!!!! the first value passed in with @_ is the $twig object rather than the $path_to_TBX, which I don't believe gets passed in automatically !!!!!!
 			print $elt->text_only()."\n";
 			push @seen, $elt->text_only();
 		}
 	}
 );
 
-$twig_instance3->parsefile($path_to_TBX); 
+$twig_instance->parsefile($path_to_TBX);  
+
+
+######### !!!!!!!! It is more common to see the If-Else construct laid out as I have changed it to look below.  It is also easier to follow from a code-maintainance standpoint   !!!!!!!!!!
+
+################### Print out errors and warnings about issues discovered.
+if($TBXcheck eq '0') { 
+	print "The file is not a tbxm file.\n"
+}
+else {
+	print "The file is a tbxm file. \n";
+}
+
+if($TBX2 eq "TBX-Min") { 
+	print "Confirmed\n"
+}
+else {
+	print "File not Confirmed\n";
+};
+
+if($old > 0) { 
+	print "The file format is NOT up to date.\n"
+}
+else {
+	print "The file format is up to date.\n";
+};
+	
+print "Total Number of Terms in File: $number_of_terms\n"; 
 
 ################## Stop the clock. Subtract Start time from End time.
 my $end_run = time();
@@ -230,21 +185,25 @@ print "\n\nAll done! Printing results:\n\n";
 
 if($counter > 0) { #For Current files
 	print "!!! Warning! One or more terms does not contain a specified language! !!!\n\n";
-	}; 
+}; 
 	
 if($counter2 > 0) { #For Out-dated files
 	print "!!! Warning! One or more terms does not contain a specified language! !!!\n\n";
-	}; 
+}; 
 #-----------
 if($TBXcheck eq '1' and $TBX2 eq 'TBX-Min') { 
-	print "The file is a tbxm file.\n" } else {
-	
-print "!!!!! The file is NOT a tbxm file. !!!!!\n"; } ;
+	print "The file is a tbxm file.\n"
+}
+else {
+	print "!!!!! The file is NOT a tbxm file. !!!!!\n";
+};
 #-----------
 if($old > 0) { 
-	print "The file format is NOT up to date.\n" } else {
-	
-print "The file format is up to date.\n"; } ;
+	print "The file format is NOT up to date.\n"
+}
+else {
+	print "The file format is up to date.\n";
+};
 #-----------
 print "The source language is: \"$source\"\n";
 print "The target language is: \"$target\"\n";
@@ -296,24 +255,27 @@ unless(open FILE, '>::'.$printfile) {
 print FILE "\n\nAll done! Printing results:\n\n";
 
 
-
 if($counter > 0) { #For Current files
 	print FILE "!!! Warning! One or more terms does not contain a specified language! !!!\n\n";
-	}; 
+}; 
 	
 if($counter2 > 0) { #For Out-dated files
 	print FILE "!!! Warning! One or more terms does not contain a specified language! !!!\n\n";
-	}; 
+}; 
 #-----------
 if($TBXcheck eq '1' and $TBX2 eq 'TBX-Min') { 
-	print FILE "The file is a tbxm file.\n" } else {
-	
-print FILE "!!!!! The file is NOT a tbxm file. !!!!!\n"; } ;
+	print FILE "The file is a tbxm file.\n"
+}
+else {
+	print FILE "!!!!! The file is NOT a tbxm file. !!!!!\n";
+};
 #-----------
 if($old > 0) { 
-	print FILE "The file format is NOT up to date.\n" } else {
-	
-print FILE "The file format is up to date.\n"; } ;
+	print FILE "The file format is NOT up to date.\n"
+}
+else {
+	print FILE "The file format is up to date.\n";
+};
 #-----------
 print FILE "The source language is: \"$source\"\n";
 print FILE "The target language is: \"$target\"\n";
