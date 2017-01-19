@@ -148,6 +148,14 @@ my $twig_instance = XML::Twig->new(
 $twig_instance->parsefile($path_to_TBX);  
 
 
+### Sort out the unique values of the subject field array @seen
+sub uniq {
+    my %seen;
+    grep !$seen{$_}++, @_;
+}
+my @filtered = uniq(@seen);
+
+
 ######### !!!!!!!! It is more common to see the If-Else construct laid out as I have changed it to look below.  It is also easier to follow from a code-maintainance standpoint   !!!!!!!!!!
 
 ################### Print out errors and warnings about issues discovered.
