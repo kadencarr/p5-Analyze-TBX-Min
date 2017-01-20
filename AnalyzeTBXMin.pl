@@ -217,7 +217,7 @@ print "The source language is: \"$source\"\n";
 print "The target language is: \"$target\"\n";
 print "Total number of terms in file: $number_of_terms\n"; 
 print "Subject fields included:\n";
-print "$_\n" for @seen;
+print "$_\n" for @filtered;
 print "\n\nFile size: $filesize bytes\n";
 print "Done in $run_time second(s)!\n\n\n\n";
 
@@ -289,7 +289,7 @@ print FILE "The source language is: \"$source\"\n";
 print FILE "The target language is: \"$target\"\n";
 print FILE "Total number of terms in file: $number_of_terms\n"; 
 print FILE "Subject fields included:\n";
-print FILE "$_\n" for @seen;
+print FILE "$_\n" for @filtered;
 print FILE "\n\nFile size: $filesize bytes\n";
 print FILE "Done in $run_time second(s)!\n\n";
 
